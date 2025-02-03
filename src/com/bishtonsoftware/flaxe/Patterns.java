@@ -41,6 +41,7 @@ public class Patterns {
 		m_patterns.add(new Pattern(">[]", ">()")) ;
 		m_patterns.add(new Pattern("import flash.", "import openfl.")) ;
 		m_patterns.add(new Pattern("import openfl.utils.Dictionary;", "")) ;
+		m_patterns.add(new Pattern("import src.", "import ")) ;
 		m_patterns.add(new Pattern(":Dictionary;", ":Map<>;")) ;
 		m_patterns.add(new Pattern(":Dictionary,", ":Map<>,")) ;
 		m_patterns.add(new Pattern(":Dictionary=", ":Map<>=")) ;
@@ -53,6 +54,7 @@ public class Patterns {
 		m_patterns.add(new Pattern("function get ", "function get_")) ;
 		m_patterns.add(new Pattern("function set ", "function set_")) ;
 		m_patterns.add(new Pattern("public class", "class")) ;
+		m_patterns.add(new Pattern("protected function", " function")) ;
 	}
 
 	public List<Pattern> getPatterns() {

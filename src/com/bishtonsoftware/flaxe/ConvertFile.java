@@ -27,8 +27,8 @@ public class ConvertFile {
 	private final Patterns m_patterns = new Patterns() ;
 
 	public ConvertFile(File srcFile) {
-		m_file = srcFile ;
-		m_DetailedLogging = isDetailedOutput(srcFile) ;
+		m_file = srcFile;
+		m_DetailedLogging = isDetailedOutput(srcFile);
 	}
 
 	private boolean isDetailedOutput(File srcFile) {
@@ -42,13 +42,27 @@ public class ConvertFile {
 	}
 
 	private String convertLine(String line, Flaxe.Action action) {
-		String modifiedLine = line ;
+		String modifiedLine = line;
 		for (Pattern pattern : m_patterns.getPatterns()) {
-			modifiedLine = modifiedLine.replace(pattern.getFrom(), pattern.getTo()) ;
+			modifiedLine = modifiedLine.replace(pattern.getFrom(), pattern.getTo());
 		}
 
-		return modifiedLine ;
+		// correct .concat
+		modifiedLine = modifiedLine.replaceAll("(?s)(?<=\\.concat\\()(.*)(?=\\))", "[$1]");
+		
+		// correct .push
+		modifiedLine = modifiedLine.replaceAll("(?<=\\.push\\()(.*,.*)(?=\\))", "[$1]");
+		modifiedLine = modifiedLine.replaceAll("(\t+)([a-zA-Z0-9].*)(\\.push)(?=\\(\\[)", "$1$2 = $2.concat");
+
+		// CONFIG::
+		modifiedLine = modifiedLine.replaceAll("(?s)CONFIG::.*(})", "");
+
+		// for loop
+		modifiedLine = modifiedLine.replaceAll("(?<=for \\().*=.*([0-9]+)(.*< )(.*\\.length).*(.*i)(\\+\\+)", "$4 in $4...$3");
+
+		return modifiedLine;
 	}
+
 
 	/*
 	 Convert
@@ -80,7 +94,8 @@ public class ConvertFile {
 
 				//System.out.println("Fixed package " + modifiedLine) ;
 
-				modifiedLine = modifiedLine + ";" ;	// Add semi for Haxe
+				modifiedLine = modifiedLine.replace("package src.", "package ");
+				modifiedLine = modifiedLine.trim() + ";" ;	// Add semi for Haxe
 			}
 
 			if (foundPackage) {
