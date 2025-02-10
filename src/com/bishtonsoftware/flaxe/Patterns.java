@@ -25,39 +25,41 @@ import java.util.List;
  *********************************************************/
 
 public class Patterns {
-	private final List<Pattern> m_patterns = new ArrayList<>() ;
+	private final List<CustomPattern> m_patterns = new ArrayList<>();
 
 	public Patterns() {
-		m_patterns.add(new Pattern(":int", ":Int")) ;
-		m_patterns.add(new Pattern(":void", ":Void")) ;
-		m_patterns.add(new Pattern(":Number", ":Float")) ;
-		m_patterns.add(new Pattern(":Boolean", ":Bool")) ;
-		m_patterns.add(new Pattern(":uint", ":UInt")) ; // Not native on all platforms see: https://api.haxe.org/UInt.html
-		m_patterns.add(new Pattern("Vector.<int>", "Vector<Int>")) ;
-		m_patterns.add(new Pattern("Vector.<Boolean>", "Vector<Bool>")) ;
-		m_patterns.add(new Pattern("Vector.<Number>", "Vector<Float>")) ;
-		m_patterns.add(new Pattern("[int]", "[Int]")) ;
-		m_patterns.add(new Pattern("Vector.<", "Vector<")) ;
-		m_patterns.add(new Pattern(">[]", ">()")) ;
-		m_patterns.add(new Pattern("import flash.", "import openfl.")) ;
-		m_patterns.add(new Pattern("import openfl.utils.Dictionary;", "")) ;
-		m_patterns.add(new Pattern("import src.", "import ")) ;
-		m_patterns.add(new Pattern(":Dictionary;", ":Map<>;")) ;
-		m_patterns.add(new Pattern(":Dictionary,", ":Map<>,")) ;
-		m_patterns.add(new Pattern(":Dictionary=", ":Map<>=")) ;
-		m_patterns.add(new Pattern(":Dictionary ", ":Map<> ")) ;
-		m_patterns.add(new Pattern("new Dictionary(", "new Map<>(")) ;
-		m_patterns.add(new Pattern("new <int>", "new Vector<Int>")) ;
-		m_patterns.add(new Pattern("new <Boolean>", "new Vector<Bool>")) ;
-		m_patterns.add(new Pattern("new <Number>", "new Vector<Float>")) ;
-		m_patterns.add(new Pattern("new <", "new Vector<")) ;
-		m_patterns.add(new Pattern("function get ", "function get_")) ;
-		m_patterns.add(new Pattern("function set ", "function set_")) ;
-		m_patterns.add(new Pattern("public class", "class")) ;
-		m_patterns.add(new Pattern("protected function", " function")) ;
+		m_patterns.add(new CustomPattern(":int", ":Int"));
+		m_patterns.add(new CustomPattern(":void", ":Void"));
+		m_patterns.add(new CustomPattern(":Number", ":Float"));
+		m_patterns.add(new CustomPattern(":Boolean", ":Bool"));
+		m_patterns.add(new CustomPattern(":uint", ":UInt")); // Not native on all platforms see: https://api.haxe.org/UInt.html
+		m_patterns.add(new CustomPattern("Vector.<int>", "Vector<Int>"));
+		m_patterns.add(new CustomPattern("Vector.<Boolean>", "Vector<Bool>"));
+		m_patterns.add(new CustomPattern("Vector.<Number>", "Vector<Float>"));
+		m_patterns.add(new CustomPattern("[int]", "[Int]"));
+		m_patterns.add(new CustomPattern("Vector.<", "Vector<"));
+		m_patterns.add(new CustomPattern(">[]", ">()"));
+		m_patterns.add(new CustomPattern("import flash.", "import openfl."));
+		m_patterns.add(new CustomPattern("import openfl.utils.Dictionary;", ""));
+		m_patterns.add(new CustomPattern("import src.", "import "));
+		m_patterns.add(new CustomPattern(":Dictionary;", ":Map<>;"));
+		m_patterns.add(new CustomPattern(":Dictionary,", ":Map<>,"));
+		m_patterns.add(new CustomPattern(":Dictionary=", ":Map<>="));
+		m_patterns.add(new CustomPattern(":Dictionary ", ":Map<> "));
+		m_patterns.add(new CustomPattern("new Dictionary(", "new Map<>("));
+		m_patterns.add(new CustomPattern("new <int>", "new Vector<Int>"));
+		m_patterns.add(new CustomPattern("new <Boolean>", "new Vector<Bool>"));
+		m_patterns.add(new CustomPattern("new <Number>", "new Vector<Float>"));
+		m_patterns.add(new CustomPattern("new <", "new Vector<"));
+		m_patterns.add(new CustomPattern("function get ", "function get_"));
+		m_patterns.add(new CustomPattern("function set ", "function set_"));
+		m_patterns.add(new CustomPattern("public class", "class"));
+		m_patterns.add(new CustomPattern("protected function", " function"));
+		m_patterns.add(new CustomPattern("public var failModesMenu:FailModesMenu;", ""));
+		m_patterns.add(new CustomPattern("parseFloat", "Std.parseFloat"));
 	}
 
-	public List<Pattern> getPatterns() {
+	public List<CustomPattern> getPatterns() {
 		return m_patterns;
 	}
 }

@@ -20,11 +20,14 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ConvertFile {
-	private final File m_file ;
-	private boolean m_DetailedLogging ;
-	private final Patterns m_patterns = new Patterns() ;
+	private final File m_file;
+	private boolean m_DetailedLogging;
+	private boolean foundSwitchCaseStatement = false;
+	private final Patterns m_patterns = new Patterns();
 
 	public ConvertFile(File srcFile) {
 		m_file = srcFile;
@@ -32,7 +35,7 @@ public class ConvertFile {
 	}
 
 	private boolean isDetailedOutput(File srcFile) {
-		return (srcFile.getAbsolutePath().contains("src3\\Comments.as")) ;
+		return (srcFile.getAbsolutePath().contains("src3\\Comments.as"));
 	}
 
 	public void log(String output) {
@@ -43,22 +46,54 @@ public class ConvertFile {
 
 	private String convertLine(String line, Flaxe.Action action) {
 		String modifiedLine = line;
-		for (Pattern pattern : m_patterns.getPatterns()) {
+		for (CustomPattern pattern : m_patterns.getPatterns()) {
 			modifiedLine = modifiedLine.replace(pattern.getFrom(), pattern.getTo());
 		}
+
+		// toFixed(1);
+		modifiedLine = modifiedLine.replaceAll("((?<=( = |\\())[a-zA-Z0-9_].*)(\\.toFixed\\(1\\))", "(Math.round($1 * 10) / 10)");
 
 		// correct .concat
 		modifiedLine = modifiedLine.replaceAll("(?s)(?<=\\.concat\\()(.*)(?=\\))", "[$1]");
 		
 		// correct .push
-		modifiedLine = modifiedLine.replaceAll("(?<=\\.push\\()(.*,.*)(?=\\))", "[$1]");
-		modifiedLine = modifiedLine.replaceAll("(\t+)([a-zA-Z0-9].*)(\\.push)(?=\\(\\[)", "$1$2 = $2.concat");
+		modifiedLine = modifiedLine.replaceAll("(.*)((?<= |\t).*(?=\\.)).*(?<=push\\()(('|\"|[a-zA-Z]).*,.*)(?=\\))", "$1$2 = $2.concat([$3]");
 
 		// CONFIG::
 		modifiedLine = modifiedLine.replaceAll("(?s)CONFIG::.*(})", "");
 
 		// for loop
-		modifiedLine = modifiedLine.replaceAll("(?<=for \\().*=.*([0-9]+)(.*< )(.*\\.length).*(.*i)(\\+\\+)", "$4 in $4...$3");
+		modifiedLine = modifiedLine.replaceAll("(?<=for \\().*=.*([0-9]+)(.*< )(.*\\.length).*(.*i)(\\+\\+)", "$4 in $1...$3");
+
+		// for in
+		//for (var relayName:String in newRelayStates){
+
+		// slice() to slice(0)
+
+		// remove gotoAndStop(0)
+		modifiedLine = modifiedLine.replaceAll("( |\t)+gotoAndStop\\(0\\);.*", "");
+
+		// remove break; from switch statement
+		if (foundSwitchCaseStatement && modifiedLine.indexOf("break;") != -1) {
+			//System.out.println("BREAK?: " + modifiedLine);
+			modifiedLine = modifiedLine.replaceAll("break;", "");
+			foundSwitchCaseStatement = false;
+			//System.out.println("REPLACE BREAK: " + modifiedLine);
+		}
+
+		// check if this line has "case "
+		Pattern p = Pattern.compile("( |\t)case .*:");
+		Matcher m = p.matcher(modifiedLine);
+		if (m.find()) {
+			foundSwitchCaseStatement = true;
+		}
+		
+
+		if (foundSwitchCaseStatement && modifiedLine.indexOf("break;") != -1) {
+			modifiedLine = modifiedLine.replaceAll("break;", "");
+			foundSwitchCaseStatement = false;
+			//System.out.println("FOUND CASE with BREAK: " + modifiedLine);
+		}
 
 		return modifiedLine;
 	}
@@ -74,12 +109,12 @@ public class ConvertFile {
 	 package foo.bar.baz;
 	*/
 	private List<String> fixPackage(List<String> lines, Flaxe.Action action) {
-		List<String> modifiedLines = new ArrayList<>(lines.size()) ;
+		List<String> modifiedLines = new ArrayList<>(lines.size());
 
 		boolean foundPackage = false ;
 		boolean foundOpen = false ;
 		int lastClose = -1 ;
-		for (int i = 0 ; i < lines.size() ; i++) {
+		for (int i = 0 ; i < lines.size(); i++) {
 			String line = lines.get(i);
 			String modifiedLine = line ;
 
@@ -89,13 +124,16 @@ public class ConvertFile {
 				// Allow for { on same line as package
 				if (line.contains("{")) {
 					foundOpen = true;
-					modifiedLine = line.substring(0, line.indexOf("{")) ;
+					modifiedLine = line.substring(0, line.indexOf("{"));
 				}
 
-				//System.out.println("Fixed package " + modifiedLine) ;
+				//System.out.println("Fixed package " + modifiedLine);
 
 				modifiedLine = modifiedLine.replace("package src.", "package ");
+				modifiedLine = modifiedLine.replace(".operation_modules", "");
 				modifiedLine = modifiedLine.trim() + ";" ;	// Add semi for Haxe
+				modifiedLine += "\n\n" + "	import comp.*;";
+				modifiedLine += "\n" + "	import openfl.utils.Object;";
 			}
 
 			if (foundPackage) {
@@ -111,12 +149,12 @@ public class ConvertFile {
 				}
 			}
 
-			modifiedLines.add(modifiedLine) ;
+			modifiedLines.add(modifiedLine);
 		}
 
 		// Take out the final } we found
 		if (foundPackage && lastClose != -1) {
-			modifiedLines.remove(lastClose) ;
+			modifiedLines.remove(lastClose);
 		}
 
 		return modifiedLines ;
@@ -128,22 +166,22 @@ public class ConvertFile {
 		 public function new(
 	*/
 	private List<String> fixConstructor(List<String> lines, Flaxe.Action action) {
-		String className = FileHelper.removeExtension(m_file.getName()) ;
+		String className = FileHelper.removeExtension(m_file.getName());
 
 		// Look for Foo(
 		String target = className + "(" ;
 
-		List<String> modifiedLines = new ArrayList<>(lines.size()) ;
+		List<String> modifiedLines = new ArrayList<>(lines.size());
 
 		for (String line : lines) {
 			String modifiedLine = line ;
 
 			if (line.contains("public") && line.contains("function") && line.contains(target)) {
-				modifiedLine = modifiedLine.replaceFirst(className, "new") ;
-				//System.out.println("Fixed constructor " + modifiedLine) ;
+				modifiedLine = modifiedLine.replaceFirst(className, "new");
+				//System.out.println("Fixed constructor " + modifiedLine);
 			}
 
-			modifiedLines.add(modifiedLine) ;
+			modifiedLines.add(modifiedLine);
 		}
 
 		return modifiedLines ;
@@ -155,42 +193,42 @@ public class ConvertFile {
 	 * to the list of imports
 	 */
 	private List<String> injectImport(List<String> lines, Flaxe.Action action) {
-		boolean containsVector = false ;
-		int firstImport = -1 ;
+		boolean containsVector = false;
+		int firstImport = -1;
 
-		for (int i = 0 ; i < lines.size() ; i++) {
-			String line = lines.get(i) ;
+		for (int i = 0 ; i < lines.size(); i++) {
+			String line = lines.get(i);
 			if (line.contains("Vector"))
 				containsVector = true ;
 			if (firstImport == -1 && line.contains("import"))
-				firstImport = i ;
+				firstImport = i;
 		}
 
 		if (containsVector && firstImport != -1) {
-			lines.add(firstImport, "import openfl.Vector;") ;
+			lines.add(firstImport, "import openfl.Vector;");
 		}
 
-		return lines ;
+		return lines;
 	}
 
 	public List<String> convertFileContents(List<String> lines, Flaxe.Action action) throws IOException {
 		// If we're just copying the file, don't modify anything
 		if (action == Flaxe.Action.kRename)
-			return lines ;
+			return lines;
 
-		lines = fixConstructor(lines, action) ;
-		lines = fixPackage(lines, action) ;
-		lines = injectImport(lines, action) ;
+		lines = fixConstructor(lines, action);
+		lines = fixPackage(lines, action);
+		lines = injectImport(lines, action);
 
-		List<String> modifiedLines = new ArrayList<>(lines.size()) ;
+		List<String> modifiedLines = new ArrayList<>(lines.size());
 
-		for (int i = 0 ; i < lines.size() ; i++) {
-			String line = lines.get(i) ;
+		for (int i = 0 ; i < lines.size(); i++) {
+			String line = lines.get(i);
 
-			String modifiedLine = convertLine(line, action) ;
-			modifiedLines.add(modifiedLine) ;
+			String modifiedLine = convertLine(line, action);
+			modifiedLines.add(modifiedLine);
 		}
 
-		return modifiedLines ;
+		return modifiedLines;
 	}
 }

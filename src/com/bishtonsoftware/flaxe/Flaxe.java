@@ -102,7 +102,7 @@ public class Flaxe {
             String modifiedExt = changeExtension(relativePath) ;
             File dest = new File(destFolder, modifiedExt) ;
 
-            System.out.println(action + " "  + src + " to " + dest) ;
+            System.out.println(action + " "  + src) ;
             convert(src, dest, action) ;
         }
     }

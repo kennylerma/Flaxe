@@ -16,11 +16,11 @@
 
 package com.bishtonsoftware.flaxe;
 
-public class Pattern {
+public class CustomPattern {
 	private final String m_from ;
 	private final String m_to ;
 
-	public Pattern(String from, String to) {
+	public CustomPattern(String from, String to) {
 		m_from = from;
 		m_to = to;
 	}
